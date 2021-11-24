@@ -1,0 +1,99 @@
+service: spaceshipcrud
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  runtime: java8
+  stage: dev
+  region: us-east-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:Query
+        - dynamodb:GetItem
+        - dynamodb:DeleteItem
+      Resource:
+        - {'Fn::GetAtt': ['SpaceshipTable', 'Arn']}
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+#            - "/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+package:
+  artifact: target/spaceshipcrud-1.0-SNAPSHOT.jar
+
+functions:
+  getSpaceshipById:
+      handler: com.ibm.ar.spaceship.handlers.GetSpaceshipByIdHandler
+      events:
+        - http:
+            path: spaceships/{spaceship_id}
+            method: get
+
+  addSpaceship:
+    handler: com.ibm.ar.spaceship.handlers.AddSpaceshipHandler
+    events:
+      - http:
+          path: spaceships
+          method: post
+
+  deleteSpaceship:
+    handler: com.ibm.ar.spaceship.handlers.DeleteSpaceshipHandler
+    events:
+      - http:
+          path: spaceships/{spaceship_id}
+          method: delete
+
+  updateSpaceship:
+    handler: com.ibm.ar.spaceship.handlers.UpdateSpaceshipHandler
+    events:
+      - http:
+          path: spaceships/{spaceship_id}
+          method: put
+#    Define function environment variables here
+#    environment:
+#      variable2: value2
+
+# you can add CloudFormation resource templates here
+resources:
+  Resources:
+    SpaceshipTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+            TableName: ${self:service}-${self:provider.stage}-spaceship-table
+            AttributeDefinitions:
+              - AttributeName: spaceship_id
+                AttributeType: S
+            KeySchema:
+              - AttributeName: spaceship_id
+                KeyType: HASH
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+            #BillingMode: PAY_PER_REQUEST
+#  Outputs:
+#     NewOutput:
+#       Description: "Description for the output"
+#       Value: "Some output value"
